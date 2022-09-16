@@ -1,0 +1,519 @@
+                                      1 ;--------------------------------------------------------
+                                      2 ; File Created by SDCC : free open source ANSI-C Compiler
+                                      3 ; Version 4.1.6 #12539 (MINGW32)
+                                      4 ;--------------------------------------------------------
+                                      5 	.module main
+                                      6 	.optsdcc -mgbz80
+                                      7 	
+                                      8 ;--------------------------------------------------------
+                                      9 ; Public variables in this module
+                                     10 ;--------------------------------------------------------
+                                     11 	.globl _main
+                                     12 	.globl _jump
+                                     13 	.globl _would_hit_surf_y
+                                     14 	.globl _performance_delay
+                                     15 	.globl _printf
+                                     16 	.globl _set_sprite_data
+                                     17 	.globl _wait_vbl_done
+                                     18 	.globl _joypad
+                                     19 	.globl _floor_y_pos
+                                     20 	.globl _gravity
+                                     21 	.globl _jumping
+                                     22 	.globl _MSHRM
+                                     23 	.globl _current_speed_y
+                                     24 	.globl _player_pos
+                                     25 ;--------------------------------------------------------
+                                     26 ; special function registers
+                                     27 ;--------------------------------------------------------
+                                     28 ;--------------------------------------------------------
+                                     29 ; ram data
+                                     30 ;--------------------------------------------------------
+                                     31 	.area _DATA
+      000000                         32 _player_pos::
+      000000                         33 	.ds 2
+      000002                         34 _current_speed_y::
+      000002                         35 	.ds 1
+                                     36 ;--------------------------------------------------------
+                                     37 ; ram data
+                                     38 ;--------------------------------------------------------
+                                     39 	.area _INITIALIZED
+      000000                         40 _MSHRM::
+      000000                         41 	.ds 176
+      0000B0                         42 _jumping::
+      0000B0                         43 	.ds 1
+      0000B1                         44 _gravity::
+      0000B1                         45 	.ds 1
+      0000B2                         46 _floor_y_pos::
+      0000B2                         47 	.ds 2
+                                     48 ;--------------------------------------------------------
+                                     49 ; absolute external ram data
+                                     50 ;--------------------------------------------------------
+                                     51 	.area _DABS (ABS)
+                                     52 ;--------------------------------------------------------
+                                     53 ; global & static initialisations
+                                     54 ;--------------------------------------------------------
+                                     55 	.area _HOME
+                                     56 	.area _GSINIT
+                                     57 	.area _GSFINAL
+                                     58 	.area _GSINIT
+                                     59 ;--------------------------------------------------------
+                                     60 ; Home
+                                     61 ;--------------------------------------------------------
+                                     62 	.area _HOME
+                                     63 	.area _HOME
+                                     64 ;--------------------------------------------------------
+                                     65 ; code
+                                     66 ;--------------------------------------------------------
+                                     67 	.area _CODE
+                                     68 ;main.c:12: void performance_delay(UINT8 numloops){
+                                     69 ;	---------------------------------
+                                     70 ; Function performance_delay
+                                     71 ; ---------------------------------
+      000000                         72 _performance_delay::
+                                     73 ;main.c:14: for(i = 0; i < numloops; i++){
+      000000 0E 00                   74 	ld	c, #0x00
+      000002                         75 00103$:
+      000002 79                      76 	ld	a, c
+      000003 F8 02                   77 	ldhl	sp,	#2
+      000005 96                      78 	sub	a, (hl)
+      000006 D0                      79 	ret	NC
+                                     80 ;main.c:15: wait_vbl_done();
+      000007 CDr00r00                81 	call	_wait_vbl_done
+                                     82 ;main.c:14: for(i = 0; i < numloops; i++){
+      00000A 0C                      83 	inc	c
+                                     84 ;main.c:18: }
+      00000B 18 F5                   85 	jr	00103$
+                                     86 ;main.c:20: int would_hit_surf_y(UINT8 proj_y_pos){
+                                     87 ;	---------------------------------
+                                     88 ; Function would_hit_surf_y
+                                     89 ; ---------------------------------
+      00000D                         90 _would_hit_surf_y::
+                                     91 ;main.c:21: if(proj_y_pos >= floor_y_pos){
+      00000D F8 02                   92 	ldhl	sp,	#2
+      00000F 4E                      93 	ld	c, (hl)
+      000010 06 00                   94 	ld	b, #0x00
+      000012 21rB2r00                95 	ld	hl, #_floor_y_pos
+      000015 79                      96 	ld	a, c
+      000016 96                      97 	sub	a, (hl)
+      000017 23                      98 	inc	hl
+      000018 78                      99 	ld	a, b
+      000019 9E                     100 	sbc	a, (hl)
+      00001A 78                     101 	ld	a, b
+      00001B 57                     102 	ld	d, a
+      00001C CB 7E                  103 	bit	7, (hl)
+      00001E 28 07                  104 	jr	Z, 00110$
+      000020 CB 7A                  105 	bit	7, d
+      000022 20 08                  106 	jr	NZ, 00111$
+      000024 BF                     107 	cp	a, a
+      000025 18 05                  108 	jr	00111$
+      000027                        109 00110$:
+      000027 CB 7A                  110 	bit	7, d
+      000029 28 01                  111 	jr	Z, 00111$
+      00002B 37                     112 	scf
+      00002C                        113 00111$:
+      00002C 38 07                  114 	jr	C, 00102$
+                                    115 ;main.c:22: return floor_y_pos;
+      00002E 21rB2r00               116 	ld	hl, #_floor_y_pos
+      000031 2A                     117 	ld	a, (hl+)
+      000032 5F                     118 	ld	e, a
+      000033 56                     119 	ld	d, (hl)
+      000034 C9                     120 	ret
+      000035                        121 00102$:
+                                    122 ;main.c:25: return -1;
+      000035 11 FF FF               123 	ld	de, #0xffff
+                                    124 ;main.c:27: }
+      000038 C9                     125 	ret
+                                    126 ;main.c:30: void jump(){
+                                    127 ;	---------------------------------
+                                    128 ; Function jump
+                                    129 ; ---------------------------------
+      000039                        130 _jump::
+      000039 3B                     131 	dec	sp
+                                    132 ;main.c:33: if(jumping == 0){
+      00003A 21rB0r00               133 	ld	hl, #_jumping
+      00003D 7E                     134 	ld	a, (hl)
+      00003E B7                     135 	or	a, a
+      00003F 20 07                  136 	jr	NZ, 00102$
+                                    137 ;main.c:35: jumping = 1;
+      000041 36 01                  138 	ld	(hl), #0x01
+                                    139 ;main.c:36: current_speed_y = 10;
+      000043 21r02r00               140 	ld	hl, #_current_speed_y
+      000046 36 0A                  141 	ld	(hl), #0x0a
+      000048                        142 00102$:
+                                    143 ;main.c:39: current_speed_y += gravity;
+      000048 FAr02r00               144 	ld	a, (#_current_speed_y)
+      00004B 21rB1r00               145 	ld	hl, #_gravity
+      00004E 86                     146 	add	a, (hl)
+      00004F 21r02r00               147 	ld	hl, #_current_speed_y
+      000052 77                     148 	ld	(hl), a
+                                    149 ;main.c:41: player_pos[1] -= current_speed_y;
+      000053 01r00r00               150 	ld	bc, #_player_pos+0
+      000056 59                     151 	ld	e, c
+      000057 50                     152 	ld	d, b
+      000058 13                     153 	inc	de
+      000059 1A                     154 	ld	a, (de)
+      00005A 6E                     155 	ld	l, (hl)
+                                    156 ;	spillPairReg hl
+                                    157 ;	spillPairReg hl
+      00005B 95                     158 	sub	a, l
+      00005C 12                     159 	ld	(de), a
+                                    160 ;main.c:43: pos_y_surf = would_hit_surf_y(player_pos[1]);
+      00005D C5                     161 	push	bc
+      00005E D5                     162 	push	de
+      00005F F5                     163 	push	af
+      000060 33                     164 	inc	sp
+      000061 CDr0Dr00               165 	call	_would_hit_surf_y
+      000064 33                     166 	inc	sp
+      000065 6B                     167 	ld	l, e
+                                    168 ;	spillPairReg hl
+                                    169 ;	spillPairReg hl
+      000066 62                     170 	ld	h, d
+                                    171 ;	spillPairReg hl
+                                    172 ;	spillPairReg hl
+      000067 D1                     173 	pop	de
+      000068 C1                     174 	pop	bc
+      000069 E5                     175 	push	hl
+      00006A 7D                     176 	ld	a, l
+      00006B F8 02                  177 	ldhl	sp,	#2
+      00006D 77                     178 	ld	(hl), a
+      00006E E1                     179 	pop	hl
+                                    180 ;main.c:45: if(pos_y_surf != -1){
+      00006F F8 00                  181 	ldhl	sp,	#0
+      000071 7E                     182 	ld	a, (hl)
+      000072 3C                     183 	inc	a
+      000073 28 13                  184 	jr	Z, 00104$
+                                    185 ;main.c:46: jumping = 0;
+      000075 21rB0r00               186 	ld	hl, #_jumping
+      000078 36 00                  187 	ld	(hl), #0x00
+                                    188 ;main.c:47: move_sprite(0, player_pos[0],pos_y_surf);
+      00007A 0A                     189 	ld	a, (bc)
+      00007B 4F                     190 	ld	c, a
+                                    191 ;c:/gbdk/include/gb/gb.h:1520: OAM_item_t * itm = &shadow_OAM[nb];
+      00007C 11r00r00               192 	ld	de, #_shadow_OAM+0
+                                    193 ;c:/gbdk/include/gb/gb.h:1521: itm->y=y, itm->x=x;
+      00007F F8 00                  194 	ldhl	sp,	#0
+      000081 7E                     195 	ld	a, (hl)
+      000082 12                     196 	ld	(de), a
+      000083 13                     197 	inc	de
+      000084 79                     198 	ld	a, c
+      000085 12                     199 	ld	(de), a
+                                    200 ;main.c:47: move_sprite(0, player_pos[0],pos_y_surf);
+      000086 18 0A                  201 	jr	00108$
+      000088                        202 00104$:
+                                    203 ;main.c:50: move_sprite(0, player_pos[0],player_pos[1]);
+      000088 1A                     204 	ld	a, (de)
+      000089 5F                     205 	ld	e, a
+      00008A 0A                     206 	ld	a, (bc)
+      00008B 4F                     207 	ld	c, a
+                                    208 ;c:/gbdk/include/gb/gb.h:1520: OAM_item_t * itm = &shadow_OAM[nb];
+      00008C 21r00r00               209 	ld	hl, #_shadow_OAM
+                                    210 ;c:/gbdk/include/gb/gb.h:1521: itm->y=y, itm->x=x;
+      00008F 7B                     211 	ld	a, e
+      000090 22                     212 	ld	(hl+), a
+      000091 71                     213 	ld	(hl), c
+                                    214 ;main.c:50: move_sprite(0, player_pos[0],player_pos[1]);
+      000092                        215 00108$:
+                                    216 ;main.c:54: }
+      000092 33                     217 	inc	sp
+      000093 C9                     218 	ret
+                                    219 ;main.c:56: void main(){
+                                    220 ;	---------------------------------
+                                    221 ; Function main
+                                    222 ; ---------------------------------
+      000094                        223 _main::
+                                    224 ;main.c:59: printf("HELLO WORLD");
+      000094 11r22r01               225 	ld	de, #___str_0
+      000097 D5                     226 	push	de
+      000098 CDr00r00               227 	call	_printf
+      00009B E1                     228 	pop	hl
+                                    229 ;c:/gbdk/include/gb/gb.h:1447: shadow_OAM[nb].tile=tile;
+      00009C 21r02r00               230 	ld	hl, #(_shadow_OAM + 2)
+      00009F 36 00                  231 	ld	(hl), #0x00
+                                    232 ;main.c:61: set_sprite_data(0, 2, MSHRM);
+      0000A1 11r00r00               233 	ld	de, #_MSHRM
+      0000A4 D5                     234 	push	de
+      0000A5 3E 02                  235 	ld	a, #0x02
+      0000A7 F5                     236 	push	af
+      0000A8 33                     237 	inc	sp
+      0000A9 AF                     238 	xor	a, a
+      0000AA F5                     239 	push	af
+      0000AB 33                     240 	inc	sp
+      0000AC CDr00r00               241 	call	_set_sprite_data
+      0000AF E8 04                  242 	add	sp, #4
+                                    243 ;main.c:63: player_pos[0] = 10;
+      0000B1 21r00r00               244 	ld	hl, #_player_pos
+      0000B4 36 0A                  245 	ld	(hl), #0x0a
+                                    246 ;main.c:64: player_pos[1] = floor_y_pos;
+      0000B6 21rB2r00               247 	ld	hl, #_floor_y_pos
+      0000B9 46                     248 	ld	b, (hl)
+      0000BA 21r01r00               249 	ld	hl, #(_player_pos + 1)
+      0000BD 70                     250 	ld	(hl), b
+                                    251 ;main.c:66: move_sprite(0, player_pos[0],player_pos[1]);
+      0000BE 21r00r00               252 	ld	hl, #_player_pos
+      0000C1 4E                     253 	ld	c, (hl)
+                                    254 ;c:/gbdk/include/gb/gb.h:1520: OAM_item_t * itm = &shadow_OAM[nb];
+      0000C2 21r00r00               255 	ld	hl, #_shadow_OAM
+                                    256 ;c:/gbdk/include/gb/gb.h:1521: itm->y=y, itm->x=x;
+      0000C5 78                     257 	ld	a, b
+      0000C6 22                     258 	ld	(hl+), a
+      0000C7 71                     259 	ld	(hl), c
+                                    260 ;main.c:67: DISPLAY_ON;
+      0000C8 F0r00                  261 	ldh	a, (_LCDC_REG + 0)
+      0000CA F6 80                  262 	or	a, #0x80
+      0000CC E0r00                  263 	ldh	(_LCDC_REG + 0), a
+                                    264 ;main.c:68: SHOW_SPRITES;
+      0000CE F0r00                  265 	ldh	a, (_LCDC_REG + 0)
+      0000D0 F6 02                  266 	or	a, #0x02
+      0000D2 E0r00                  267 	ldh	(_LCDC_REG + 0), a
+                                    268 ;main.c:70: while(1){
+      0000D4                        269 00109$:
+                                    270 ;main.c:71: if((joypad() & J_A) || jumping == 1){
+      0000D4 CDr00r00               271 	call	_joypad
+      0000D7 CB 63                  272 	bit	4, e
+      0000D9 20 06                  273 	jr	NZ, 00101$
+      0000DB FArB0r00               274 	ld	a, (#_jumping)
+      0000DE 3D                     275 	dec	a
+      0000DF 20 03                  276 	jr	NZ, 00102$
+      0000E1                        277 00101$:
+                                    278 ;main.c:72: jump();
+      0000E1 CDr39r00               279 	call	_jump
+      0000E4                        280 00102$:
+                                    281 ;main.c:74: if(joypad() & J_LEFT){
+      0000E4 CDr00r00               282 	call	_joypad
+      0000E7 CB 4B                  283 	bit	1, e
+      0000E9 28 13                  284 	jr	Z, 00105$
+                                    285 ;main.c:75: player_pos[0] -= 4;
+      0000EB FAr00r00               286 	ld	a, (#_player_pos + 0)
+      0000EE C6 FC                  287 	add	a, #0xfc
+      0000F0 EAr00r00               288 	ld	(#_player_pos),a
+                                    289 ;main.c:76: move_sprite(0, player_pos[0],player_pos[1]);
+      0000F3 21r01r00               290 	ld	hl, #(_player_pos + 1)
+      0000F6 46                     291 	ld	b, (hl)
+      0000F7 4F                     292 	ld	c, a
+                                    293 ;c:/gbdk/include/gb/gb.h:1520: OAM_item_t * itm = &shadow_OAM[nb];
+      0000F8 21r00r00               294 	ld	hl, #_shadow_OAM
+                                    295 ;c:/gbdk/include/gb/gb.h:1521: itm->y=y, itm->x=x;
+      0000FB 78                     296 	ld	a, b
+      0000FC 22                     297 	ld	(hl+), a
+      0000FD 71                     298 	ld	(hl), c
+                                    299 ;main.c:76: move_sprite(0, player_pos[0],player_pos[1]);
+      0000FE                        300 00105$:
+                                    301 ;main.c:78: if(joypad() & J_RIGHT){
+      0000FE CDr00r00               302 	call	_joypad
+      000101 7B                     303 	ld	a, e
+      000102 0F                     304 	rrca
+      000103 30 13                  305 	jr	NC, 00107$
+                                    306 ;main.c:79: player_pos[0] += 4;
+      000105 FAr00r00               307 	ld	a, (#_player_pos + 0)
+      000108 C6 04                  308 	add	a, #0x04
+      00010A EAr00r00               309 	ld	(#_player_pos),a
+                                    310 ;main.c:80: move_sprite(0, player_pos[0],player_pos[1]);
+      00010D 21r01r00               311 	ld	hl, #(_player_pos + 1)
+      000110 4E                     312 	ld	c, (hl)
+      000111 47                     313 	ld	b, a
+                                    314 ;c:/gbdk/include/gb/gb.h:1520: OAM_item_t * itm = &shadow_OAM[nb];
+      000112 21r00r00               315 	ld	hl, #_shadow_OAM
+                                    316 ;c:/gbdk/include/gb/gb.h:1521: itm->y=y, itm->x=x;
+      000115 79                     317 	ld	a, c
+      000116 22                     318 	ld	(hl+), a
+      000117 70                     319 	ld	(hl), b
+                                    320 ;main.c:80: move_sprite(0, player_pos[0],player_pos[1]);
+      000118                        321 00107$:
+                                    322 ;main.c:84: performance_delay(5);
+      000118 3E 05                  323 	ld	a, #0x05
+      00011A F5                     324 	push	af
+      00011B 33                     325 	inc	sp
+      00011C CDr00r00               326 	call	_performance_delay
+      00011F 33                     327 	inc	sp
+                                    328 ;main.c:87: }
+      000120 18 B2                  329 	jr	00109$
+      000122                        330 ___str_0:
+      000122 48 45 4C 4C 4F 20 57   331 	.ascii "HELLO WORLD"
+             4F 52 4C 44
+      00012D 00                     332 	.db 0x00
+                                    333 	.area _CODE
+                                    334 	.area _INITIALIZER
+      000000                        335 __xinit__MSHRM:
+      000000 3C                     336 	.db #0x3c	; 60
+      000001 3C                     337 	.db #0x3c	; 60
+      000002 42                     338 	.db #0x42	; 66	'B'
+      000003 4E                     339 	.db #0x4e	; 78	'N'
+      000004 81                     340 	.db #0x81	; 129
+      000005 CB                     341 	.db #0xcb	; 203
+      000006 81                     342 	.db #0x81	; 129
+      000007 FF                     343 	.db #0xff	; 255
+      000008 FF                     344 	.db #0xff	; 255
+      000009 FF                     345 	.db #0xff	; 255
+      00000A 56                     346 	.db #0x56	; 86	'V'
+      00000B 56                     347 	.db #0x56	; 86	'V'
+      00000C 42                     348 	.db #0x42	; 66	'B'
+      00000D 42                     349 	.db #0x42	; 66	'B'
+      00000E 3C                     350 	.db #0x3c	; 60
+      00000F 3C                     351 	.db #0x3c	; 60
+      000010 00                     352 	.db #0x00	; 0
+      000011 00                     353 	.db #0x00	; 0
+      000012 38                     354 	.db #0x38	; 56	'8'
+      000013 38                     355 	.db #0x38	; 56	'8'
+      000014 44                     356 	.db #0x44	; 68	'D'
+      000015 6C                     357 	.db #0x6c	; 108	'l'
+      000016 82                     358 	.db #0x82	; 130
+      000017 BE                     359 	.db #0xbe	; 190
+      000018 82                     360 	.db #0x82	; 130
+      000019 FA                     361 	.db #0xfa	; 250
+      00001A 7C                     362 	.db #0x7c	; 124
+      00001B 7C                     363 	.db #0x7c	; 124
+      00001C 44                     364 	.db #0x44	; 68	'D'
+      00001D 44                     365 	.db #0x44	; 68	'D'
+      00001E 38                     366 	.db #0x38	; 56	'8'
+      00001F 38                     367 	.db #0x38	; 56	'8'
+      000020 00                     368 	.db #0x00	; 0
+      000021 00                     369 	.db #0x00	; 0
+      000022 1C                     370 	.db #0x1c	; 28
+      000023 1C                     371 	.db #0x1c	; 28
+      000024 23                     372 	.db #0x23	; 35
+      000025 3F                     373 	.db #0x3f	; 63
+      000026 31                     374 	.db #0x31	; 49	'1'
+      000027 3F                     375 	.db #0x3f	; 63
+      000028 62                     376 	.db #0x62	; 98	'b'
+      000029 7F                     377 	.db #0x7f	; 127
+      00002A 5C                     378 	.db #0x5c	; 92
+      00002B 5F                     379 	.db #0x5f	; 95
+      00002C 42                     380 	.db #0x42	; 66	'B'
+      00002D 43                     381 	.db #0x43	; 67	'C'
+      00002E 01                     382 	.db #0x01	; 1
+      00002F 01                     383 	.db #0x01	; 1
+      000030 70                     384 	.db #0x70	; 112	'p'
+      000031 70                     385 	.db #0x70	; 112	'p'
+      000032 A8                     386 	.db #0xa8	; 168
+      000033 88                     387 	.db #0x88	; 136
+      000034 48                     388 	.db #0x48	; 72	'H'
+      000035 08                     389 	.db #0x08	; 8
+      000036 B0                     390 	.db #0xb0	; 176
+      000037 30                     391 	.db #0x30	; 48	'0'
+      000038 FC                     392 	.db #0xfc	; 252
+      000039 7C                     393 	.db #0x7c	; 124
+      00003A 1E                     394 	.db #0x1e	; 30
+      00003B FE                     395 	.db #0xfe	; 254
+      00003C 3E                     396 	.db #0x3e	; 62
+      00003D FE                     397 	.db #0xfe	; 254
+      00003E DC                     398 	.db #0xdc	; 220
+      00003F DC                     399 	.db #0xdc	; 220
+      000040 00                     400 	.db #0x00	; 0
+      000041 00                     401 	.db #0x00	; 0
+      000042 00                     402 	.db #0x00	; 0
+      000043 00                     403 	.db #0x00	; 0
+      000044 00                     404 	.db #0x00	; 0
+      000045 00                     405 	.db #0x00	; 0
+      000046 00                     406 	.db #0x00	; 0
+      000047 00                     407 	.db #0x00	; 0
+      000048 00                     408 	.db #0x00	; 0
+      000049 00                     409 	.db #0x00	; 0
+      00004A 00                     410 	.db #0x00	; 0
+      00004B 00                     411 	.db #0x00	; 0
+      00004C 00                     412 	.db #0x00	; 0
+      00004D 00                     413 	.db #0x00	; 0
+      00004E 00                     414 	.db #0x00	; 0
+      00004F 00                     415 	.db #0x00	; 0
+      000050 00                     416 	.db #0x00	; 0
+      000051 00                     417 	.db #0x00	; 0
+      000052 00                     418 	.db #0x00	; 0
+      000053 00                     419 	.db #0x00	; 0
+      000054 09                     420 	.db #0x09	; 9
+      000055 09                     421 	.db #0x09	; 9
+      000056 1F                     422 	.db #0x1f	; 31
+      000057 1F                     423 	.db #0x1f	; 31
+      000058 23                     424 	.db #0x23	; 35
+      000059 23                     425 	.db #0x23	; 35
+      00005A 33                     426 	.db #0x33	; 51	'3'
+      00005B 33                     427 	.db #0x33	; 51	'3'
+      00005C 23                     428 	.db #0x23	; 35
+      00005D 23                     429 	.db #0x23	; 35
+      00005E 1F                     430 	.db #0x1f	; 31
+      00005F 1F                     431 	.db #0x1f	; 31
+      000060 70                     432 	.db #0x70	; 112	'p'
+      000061 70                     433 	.db #0x70	; 112	'p'
+      000062 A8                     434 	.db #0xa8	; 168
+      000063 88                     435 	.db #0x88	; 136
+      000064 48                     436 	.db #0x48	; 72	'H'
+      000065 08                     437 	.db #0x08	; 8
+      000066 B0                     438 	.db #0xb0	; 176
+      000067 30                     439 	.db #0x30	; 48	'0'
+      000068 FC                     440 	.db #0xfc	; 252
+      000069 FC                     441 	.db #0xfc	; 252
+      00006A 37                     442 	.db #0x37	; 55	'7'
+      00006B 37                     443 	.db #0x37	; 55	'7'
+      00006C 3E                     444 	.db #0x3e	; 62
+      00006D 3E                     445 	.db #0x3e	; 62
+      00006E FC                     446 	.db #0xfc	; 252
+      00006F FC                     447 	.db #0xfc	; 252
+      000070 00                     448 	.db #0x00	; 0
+      000071 00                     449 	.db #0x00	; 0
+      000072 FF                     450 	.db #0xff	; 255
+      000073 FF                     451 	.db #0xff	; 255
+      000074 FF                     452 	.db #0xff	; 255
+      000075 00                     453 	.db #0x00	; 0
+      000076 FF                     454 	.db #0xff	; 255
+      000077 00                     455 	.db #0x00	; 0
+      000078 FF                     456 	.db #0xff	; 255
+      000079 00                     457 	.db #0x00	; 0
+      00007A FF                     458 	.db #0xff	; 255
+      00007B 00                     459 	.db #0x00	; 0
+      00007C 00                     460 	.db #0x00	; 0
+      00007D FF                     461 	.db #0xff	; 255
+      00007E FF                     462 	.db #0xff	; 255
+      00007F FF                     463 	.db #0xff	; 255
+      000080 00                     464 	.db #0x00	; 0
+      000081 00                     465 	.db #0x00	; 0
+      000082 7F                     466 	.db #0x7f	; 127
+      000083 7F                     467 	.db #0x7f	; 127
+      000084 FF                     468 	.db #0xff	; 255
+      000085 80                     469 	.db #0x80	; 128
+      000086 FF                     470 	.db #0xff	; 255
+      000087 80                     471 	.db #0x80	; 128
+      000088 FF                     472 	.db #0xff	; 255
+      000089 80                     473 	.db #0x80	; 128
+      00008A FF                     474 	.db #0xff	; 255
+      00008B 80                     475 	.db #0x80	; 128
+      00008C FF                     476 	.db #0xff	; 255
+      00008D 80                     477 	.db #0x80	; 128
+      00008E 7F                     478 	.db #0x7f	; 127
+      00008F 7F                     479 	.db #0x7f	; 127
+      000090 7E                     480 	.db #0x7e	; 126
+      000091 42                     481 	.db #0x42	; 66	'B'
+      000092 7E                     482 	.db #0x7e	; 126
+      000093 42                     483 	.db #0x42	; 66	'B'
+      000094 42                     484 	.db #0x42	; 66	'B'
+      000095 42                     485 	.db #0x42	; 66	'B'
+      000096 42                     486 	.db #0x42	; 66	'B'
+      000097 42                     487 	.db #0x42	; 66	'B'
+      000098 42                     488 	.db #0x42	; 66	'B'
+      000099 42                     489 	.db #0x42	; 66	'B'
+      00009A 42                     490 	.db #0x42	; 66	'B'
+      00009B 42                     491 	.db #0x42	; 66	'B'
+      00009C 42                     492 	.db #0x42	; 66	'B'
+      00009D 42                     493 	.db #0x42	; 66	'B'
+      00009E 42                     494 	.db #0x42	; 66	'B'
+      00009F 42                     495 	.db #0x42	; 66	'B'
+      0000A0 42                     496 	.db #0x42	; 66	'B'
+      0000A1 42                     497 	.db #0x42	; 66	'B'
+      0000A2 42                     498 	.db #0x42	; 66	'B'
+      0000A3 42                     499 	.db #0x42	; 66	'B'
+      0000A4 42                     500 	.db #0x42	; 66	'B'
+      0000A5 42                     501 	.db #0x42	; 66	'B'
+      0000A6 42                     502 	.db #0x42	; 66	'B'
+      0000A7 42                     503 	.db #0x42	; 66	'B'
+      0000A8 42                     504 	.db #0x42	; 66	'B'
+      0000A9 42                     505 	.db #0x42	; 66	'B'
+      0000AA 42                     506 	.db #0x42	; 66	'B'
+      0000AB 42                     507 	.db #0x42	; 66	'B'
+      0000AC 42                     508 	.db #0x42	; 66	'B'
+      0000AD 42                     509 	.db #0x42	; 66	'B'
+      0000AE 42                     510 	.db #0x42	; 66	'B'
+      0000AF 42                     511 	.db #0x42	; 66	'B'
+      0000B0                        512 __xinit__jumping:
+      0000B0 00                     513 	.db #0x00	;  0
+      0000B1                        514 __xinit__gravity:
+      0000B1 FE                     515 	.db #0xfe	; -2
+      0000B2                        516 __xinit__floor_y_pos:
+      0000B2 64 00                  517 	.dw #0x0064
+                                    518 	.area _CABS (ABS)
