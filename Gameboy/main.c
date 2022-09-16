@@ -1,17 +1,28 @@
+
+// include headers
 #include <gb/gb.h>
 #include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+// game files
 #include "MSHRM.c"
 #include "gameChar.c"
 
-char player_pos[2];
-short jumping = 0;
-short gravity = -2;
-int current_speed_y;
-int floor_y_pos = 100;
+
+
+// variables
+int16_t player_pos[2];
+bool jumping = false;
+int gravity = -2;
+int16_t current_speed_y;
+int16_t floor_y_pos = 100;
 
 struct charx2 bee;
 struct charx2 fly;
+//-----------------------
 
+// fly setup
 void setup_fly(){
 	fly.x = 100;
 	fly.y = 100;
@@ -24,6 +35,7 @@ void setup_fly(){
 	fly.spriteids[1] = 1;
 }
 
+// bee setup
 void setup_bee(){
 	bee.x = 150;
 	bee.y = 100;
@@ -37,7 +49,7 @@ void setup_bee(){
 }
 
 
-
+// delaying inputs
 void performance_delay(int numloops){
 	int i;
 	for(i = 0; i < numloops; i++){
@@ -46,7 +58,9 @@ void performance_delay(int numloops){
 	}
 }
 
-int would_hit_surf_y(UINT8 proj_y_pos){
+
+// surface detection
+int would_hit_surf_y(int proj_y_pos){
 	if(proj_y_pos >= floor_y_pos){
 		return floor_y_pos;
 
@@ -55,7 +69,7 @@ int would_hit_surf_y(UINT8 proj_y_pos){
 
 }
 
-
+// jumping
 void jump(){
 	int pos_y_surf;
 
@@ -84,7 +98,7 @@ void jump(){
 
 
 
-
+// main
 void main(){
 	setup_bee();
 	setup_fly();
